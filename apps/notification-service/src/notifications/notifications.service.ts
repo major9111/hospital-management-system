@@ -1,36 +1,45 @@
-import { Injectable } from '@nestjs/common';
-import { Queue } from 'bullmq';
-import { NotificationPayload } from '../adapters/channel-adapters';
+import { Injectable, Logger } from '@nestjs/common';
+import { EmailAdapter, SmsAdapter, PushAdapter, NotificationPayload } from '../adapters/channel-adapters';
 
-const connection = {
-  host: process.env.REDIS_HOST ?? 'localhost',
-  port: Number(process.env.REDIS_PORT ?? 6379),
-};
-
-// One queue per channel so a burst of SMS traffic can't starve email
-// delivery (or vice versa), and each channel gets its own retry policy.
-const defaultJobOptions = {
-  attempts: 5,
-  backoff: { type: 'exponential' as const, delay: 2000 },
-  removeOnComplete: 1000,
-  removeOnFail: false, // keep failures around for manual inspection/alerting
-};
-
+// No queue backing this anymore (BullMQ needed Redis, which this
+// deployment doesn't have) — sends land directly. This means a failed
+// send doesn't automatically retry the way it did before; each call does
+// one built-in retry with a short delay, then gives up and logs. If you
+// add Redis back later (e.g. Render's free Key Value tier), swap this
+// back to the BullMQ version for real retry/backoff and a dead-letter view.
 @Injectable()
 export class NotificationsService {
-  private emailQueue = new Queue('email', { connection, defaultJobOptions });
-  private smsQueue = new Queue('sms', { connection, defaultJobOptions });
-  private pushQueue = new Queue('push', { connection, defaultJobOptions });
+  private readonly logger = new Logger(NotificationsService.name);
+
+  constructor(
+    private emailAdapter: EmailAdapter,
+    private smsAdapter: SmsAdapter,
+    private pushAdapter: PushAdapter,
+  ) {}
 
   async sendEmail(payload: NotificationPayload) {
-    await this.emailQueue.add('send', payload);
+    await this.sendWithRetry(() => this.emailAdapter.send(payload), 'email');
   }
 
   async sendSms(payload: NotificationPayload) {
-    await this.smsQueue.add('send', payload);
+    await this.sendWithRetry(() => this.smsAdapter.send(payload), 'sms');
   }
 
   async sendPush(payload: NotificationPayload) {
-    await this.pushQueue.add('send', payload);
+    await this.sendWithRetry(() => this.pushAdapter.send(payload), 'push');
+  }
+
+  private async sendWithRetry(fn: () => Promise<void>, label: string) {
+    try {
+      await fn();
+    } catch (err) {
+      this.logger.warn(`${label} send failed, retrying once: ${err}`);
+      try {
+        await new Promise((r) => setTimeout(r, 1000));
+        await fn();
+      } catch (err2) {
+        this.logger.error(`${label} send failed after retry, giving up: ${err2}`);
+      }
+    }
   }
 }

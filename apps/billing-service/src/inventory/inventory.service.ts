@@ -1,14 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import Redis from 'ioredis';
 import { billingPgPool } from '../db/pg-pool';
-
-const redisPublisher = new Redis({
-  host: process.env.REDIS_HOST ?? 'localhost',
-  port: Number(process.env.REDIS_PORT ?? 6379),
-});
+import { NotifyClient } from '../notifications/notify-client.service';
 
 @Injectable()
 export class InventoryService {
+  constructor(private notifyClient: NotifyClient) {}
+
   async listLowStock(hospitalId: string) {
     const result = await billingPgPool.query(
       `SELECT * FROM inventory.low_stock_items WHERE hospital_id = $1`,
@@ -55,17 +52,14 @@ export class InventoryService {
       await client.query('COMMIT');
 
       if (newQuantity <= item.reorder_threshold) {
-        // Fire-and-forget publish — a missed notification here shouldn't
+        // Fire-and-forget HTTP call — a missed notification here shouldn't
         // roll back a stock adjustment that already committed.
-        await redisPublisher.publish(
-          'events:inventory_low_stock',
-          JSON.stringify({
-            itemName: item.name,
-            quantityOnHand: newQuantity,
-            reorderThreshold: item.reorder_threshold,
-            procurementEmail: 'procurement@REPLACE_WITH_HOSPITAL_DOMAIN', // TODO: per-hospital procurement contact
-          }),
-        );
+        await this.notifyClient.notifyLowStock({
+          itemName: item.name,
+          quantityOnHand: newQuantity,
+          reorderThreshold: item.reorder_threshold,
+          procurementEmail: 'procurement@REPLACE_WITH_HOSPITAL_DOMAIN', // TODO: per-hospital procurement contact
+        });
       }
 
       return { itemId, newQuantity };

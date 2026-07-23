@@ -15,7 +15,7 @@ packages/
 db/
   schema.sql      Postgres schema: tenancy, auth, RBAC, patients, appointments, audit log, RLS policies
 infra/            (place for docker/k8s/terraform configs as the system grows)
-docker-compose.yml  Local Postgres + Redis + Elasticsearch
+docker-compose.yml  Local Postgres + Elasticsearch (dev only — no Redis; see "No Redis" section)
 ```
 
 ## How requests flow
@@ -49,7 +49,7 @@ produce a diagnosis — only triage severity and book/route appointments.
 ## Local dev (Vercel/Render/Neon still power production — see DEPLOYMENT.md)
 
 ```bash
-docker-compose up -d          # postgres, redis, elasticsearch — LOCAL ONLY
+docker-compose up -d          # postgres, elasticsearch, search-sync, notification-service — LOCAL ONLY
 psql $DATABASE_URL -f db/schema.sql
 npm install
 npm run dev:gateway           # NestJS on :3000
@@ -99,8 +99,10 @@ npm run dev:ai                # FastAPI on :8002
 ## Deployment
 
 **Deploying to Vercel + Render + Neon (the actual target for this
-project)?** See `DEPLOYMENT.md` and `render.yaml` — that's the primary,
-supported path.
+project)?** See `DEPLOYMENT.md` — services are created manually in the
+Render dashboard (no Blueprint/`render.yaml`), every backend service runs
+as a free `type: web` service, and there's no Redis (see the "No Redis"
+section below for what that trades away).
 
 **Going live with real patients?** See `PRODUCTION_CHECKLIST.md` first —
 secrets rotation, the self-registration hospital-validation fix, CORS
@@ -173,25 +175,44 @@ relevant, but not needed for the Vercel/Render/Neon path.
   `roles.enum.ts` + `db/schema.sql` if front-desk staff should invoice
   directly without going through an admin.
 
-## Notification service is now wired
+## Notification service — now HTTP-based, no Redis
 
-- `apps/notification-service` (NestJS, port 3002) has no HTTP API beyond
-  `/health` — it's driven entirely by Redis pub/sub events published by
-  other services, so a burst of activity in ehr-service or billing-service
-  never blocks waiting on a notification round-trip.
-- Event flow: `ehr-service` publishes `events:appointment_booked` on
-  booking; `billing-service`'s inventory adjustment publishes
-  `events:inventory_low_stock` when a change leaves an item at or below its
-  reorder threshold; `ai-service`'s escalation path is wired for
-  `events:ai_escalation` (not yet published from `receptionist.py` — the
-  channel and handler exist, the publish call is the remaining piece).
-- Delivery itself runs through **BullMQ** (one queue per channel: email,
-  SMS, push) rather than firing directly from the event listener — this
-  gets automatic retries with exponential backoff and keeps failed jobs
-  around for inspection instead of silently dropping a failed SMS.
-- Channel adapters (`channel-adapters.ts`) are console-log stubs with the
-  real provider swap point commented directly in each one (SendGrid/SES
-  for email, Twilio/Termii/Africa's Talking for SMS, FCM/OneSignal for push).
+Originally built on Redis pub/sub + BullMQ. Rebuilt to drop Redis entirely
+(see "No Redis on this deployment" below for why) — `ehr-service`,
+`billing-service`, and `ai-service` now call `notification-service`'s HTTP
+endpoints directly instead of publishing events:
+
+- `POST /notify/appointment-booked` — called from `ehr-service`'s
+  `notify_client.py` right after a successful booking
+- `POST /notify/inventory-low-stock` — called from `billing-service`'s
+  `NotifyClient` when a stock adjustment leaves an item at or below its
+  reorder threshold
+- `POST /notify/ai-escalation` — called from `ai-service`'s
+  `internal_client.py` the moment the urgent-keyword check fires
+
+All three are guarded by the same `x-internal-token` signature check used
+everywhere else in this system (`InternalAuthGuard`) — now the *actual*
+security boundary for this service rather than a defense-in-depth layer,
+since there's no private networking on this deployment.
+
+Delivery itself: one attempt, one retry after a short delay, then log and
+give up (no queue, no backoff, no dead-letter view — that's the real
+tradeoff of not having Redis backing this). Channel adapters
+(`channel-adapters.ts`) are still console-log stubs with the real provider
+swap point commented directly in each one (SendGrid/SES for email,
+Twilio/Termii/Africa's Talking for SMS, FCM/OneSignal for push).
+
+## No Redis on this deployment
+
+This system was originally designed with Redis (BullMQ queues, pub/sub
+events, rate-limit state). It's been rebuilt without it because Render's
+free tier requires a card on file for Redis/Key Value, Private Services,
+and Background Workers — only plain `type: web` services are free without
+one. Every backend service is now a public Render web service, and
+`search-sync` (fundamentally a background job) is wrapped in a minimal
+FastAPI app just so it qualifies as a `type: web` service. See
+`DEPLOYMENT.md` for the full writeup of what this trades away and how to
+add Redis back later if you outgrow the free tier.
 
 ## AI receptionist is now fully wired
 
@@ -203,14 +224,15 @@ relevant, but not needed for the Vercel/Render/Neon path.
   model call and escalates instantly on emergency language (no round-trip
   needed), and the system prompt constrains everything the model says for
   everything else.
-- Escalation now actually publishes `events:ai_escalation` to Redis, so the
-  notification service's existing handler (previously unreachable — the
-  channel existed but nothing published to it) now fires for real.
+- Escalation calls `POST /notify/ai-escalation` directly (previously a
+  Redis publish), so the notification service's handler — previously
+  unreachable since nothing called it — now fires for real.
 - **Booking is deliberately not something the model does.** `POST
   /ai/receptionist/book` is a separate, deterministic endpoint — the chat
   only gathers department/time conversationally; booking itself goes
   through `ai-service`'s `internal_client.py`, which signs its own
   short-lived internal JWT (same `INTERNAL_SERVICE_SECRET` the gateway
+
   uses) to call `ehr-service` directly. This means there's always a
   concrete, non-AI-generated API call responsible for creating the
   appointment record — useful both for audit and for keeping "the model

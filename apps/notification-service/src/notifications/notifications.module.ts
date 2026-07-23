@@ -1,18 +1,13 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { NotificationsService } from './notifications.service';
-import { NotificationWorkers } from './notification.workers';
+import { NotifyController } from './notify.controller';
 import { EmailAdapter, SmsAdapter, PushAdapter } from '../adapters/channel-adapters';
-import { EventListener } from '../listeners/event-listener.service';
 
 @Module({
-  providers: [
-    NotificationsService,
-    NotificationWorkers,
-    EmailAdapter,
-    SmsAdapter,
-    PushAdapter,
-    EventListener,
-  ],
+  imports: [JwtModule.register({})],
+  controllers: [NotifyController],
+  providers: [NotificationsService, EmailAdapter, SmsAdapter, PushAdapter],
   exports: [NotificationsService],
 })
 export class NotificationsModule {}

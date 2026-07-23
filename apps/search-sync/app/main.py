@@ -4,6 +4,7 @@ import logging
 import os
 
 import asyncpg
+from fastapi import FastAPI
 from elasticsearch import AsyncElasticsearch, NotFoundError
 
 from app.mappings import (
@@ -54,7 +55,10 @@ async def ensure_indices(es: AsyncElasticsearch):
 
 async def full_reindex(pool: asyncpg.Pool, es: AsyncElasticsearch):
     """One-time (or on-demand) bulk sync — run this after a schema change
-    or if the LISTEN/NOTIFY channel was down and events were missed."""
+    or if the LISTEN/NOTIFY channel was down and events were missed. Also
+    runs on every process start, which conveniently doubles as recovery
+    from Render's free-tier behavior of fully stopping (not just idling)
+    a sleeping web service — each wake-up re-syncs from scratch."""
     for table, cfg in TABLE_CONFIG.items():
         async with pool.acquire() as conn:
             rows = await conn.fetch(f"SELECT id FROM {table}")
@@ -107,25 +111,48 @@ async def listen_loop(pool: asyncpg.Pool, es: AsyncElasticsearch):
     await conn.add_listener("record_changes", on_notify)
     log.info("Listening for changes on 'record_changes'...")
 
-    # Keep the connection (and process) alive indefinitely.
+    # Keep the connection (and background task) alive indefinitely.
     while True:
         await asyncio.sleep(3600)
 
 
-async def main():
-    database_url = DATABASE_URL
-    pool = await asyncpg.create_pool(
-        database_url,
-        min_size=2,
-        max_size=5,
-        ssl="require" if "neon.tech" in database_url else None,
+# --- FastAPI wrapper ---
+# search-sync is fundamentally a background job (Postgres LISTEN loop), not
+# a request-handling service. It's wrapped in a minimal FastAPI app anyway
+# so it can be deployed as a Render "Web Service" (the only free, no-card
+# service type) instead of a "Background Worker" (requires a paid plan).
+# The actual sync work runs as a background asyncio task started on
+# startup; /health exists only so Render's health checks (and the free
+# tier's request-triggered wake-up) have something to hit.
+app = FastAPI(title="search-sync")
+_pool: asyncpg.Pool | None = None
+_es: AsyncElasticsearch | None = None
+
+
+@app.on_event("startup")
+async def startup():
+    global _pool, _es
+    _pool = await asyncpg.create_pool(
+        DATABASE_URL, min_size=2, max_size=5,
+        ssl="require" if "neon.tech" in DATABASE_URL else None,
     )
-    es = AsyncElasticsearch(ELASTICSEARCH_URL)
+    _es = AsyncElasticsearch(ELASTICSEARCH_URL)
+    await ensure_indices(_es)
+    asyncio.create_task(full_reindex(_pool, _es))
+    asyncio.create_task(listen_loop(_pool, _es))
 
-    await ensure_indices(es)
-    await full_reindex(pool, es)
-    await listen_loop(pool, es)
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+@app.post("/reindex")
+async def trigger_reindex():
+    # Manual catch-up trigger — useful right after a free-tier wake-up if
+    # you don't want to wait for the startup reindex, or after Elasticsearch
+    # itself had downtime independent of this service.
+    if _pool is None or _es is None:
+        return {"status": "not ready yet"}
+    asyncio.create_task(full_reindex(_pool, _es))
+    return {"status": "reindex started"}

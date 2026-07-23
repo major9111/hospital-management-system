@@ -1,14 +1,10 @@
-import os
-import json
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-import redis.asyncio as redis
 from app.deps import get_request_context, RequestContext
 from app.db import scoped_connection
+from app.notify_client import notify_appointment_booked
 
 router = APIRouter()
-
-_redis = redis.from_url(os.environ.get("REDIS_URL", "redis://localhost:6379"))
 
 
 class CreateAppointmentRequest(BaseModel):
@@ -103,14 +99,11 @@ async def create_appointment(
             ctx.hospital_id, patient_id, body.department, body.scheduledAt, body.bookedVia,
         )
 
-    await _redis.publish(
-        "events:appointment_booked",
-        json.dumps({
-            "patientEmail": patient_row["email"],
-            "patientPhone": patient_row["phone"],
-            "scheduledAt": body.scheduledAt,
-            "department": body.department,
-        }),
+    await notify_appointment_booked(
+        patient_email=patient_row["email"],
+        patient_phone=patient_row["phone"],
+        scheduled_at=body.scheduledAt,
+        department=body.department,
     )
 
     return {

@@ -1,21 +1,16 @@
-import os
-import json
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-import redis.asyncio as redis
 from app.deps import get_request_context, RequestContext
 from app.claude_client import get_receptionist_reply
-from app.internal_client import book_appointment_via_ehr
+from app.internal_client import book_appointment_via_ehr, notify_escalation
 
 router = APIRouter()
-_redis = redis.from_url(os.environ.get("REDIS_URL", "redis://localhost:6379"))
 
 
 class IntakeMessage(BaseModel):
     patient_message: str
     session_id: str
-    # Client resends prior turns each call (this service is stateless) —
-    # a real deployment would key this off session_id in Redis instead.
+    # Client resends prior turns each call (this service is stateless).
     history: list[dict] = []
 
 
@@ -38,14 +33,7 @@ async def chat(msg: IntakeMessage, ctx: RequestContext = Depends(get_request_con
     lowered = msg.patient_message.lower()
 
     if any(keyword in lowered for keyword in URGENT_KEYWORDS):
-        await _redis.publish(
-            "events:ai_escalation",
-            json.dumps({
-                "patientPhone": None,  # populate from the patient record once looked up
-                "reason": "urgent_symptom_detected",
-                "sessionId": msg.session_id,
-            }),
-        )
+        await notify_escalation(session_id=msg.session_id, reason="urgent_symptom_detected")
         return {
             "action": "escalate_to_human",
             "reason": "urgent_symptom_detected",
