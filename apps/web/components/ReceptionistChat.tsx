@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { Bot, Send, AlertTriangle } from 'lucide-react';
 import { authFetch } from '@/lib/api';
 
 type Message = { role: 'user' | 'assistant'; content: string };
@@ -48,12 +49,15 @@ export function ReceptionistChat() {
   }
 
   return (
-    <div className="border border-hairline bg-white rounded-sm flex flex-col h-[420px]">
+    <div className="border border-hairline bg-white rounded-md flex flex-col h-[560px] sticky top-8">
       <div className="px-5 py-3 border-b border-hairline flex items-center justify-between">
-        <h3 className="font-display text-lg font-semibold text-ink">AI receptionist</h3>
+        <div className="flex items-center gap-2">
+          <Bot className="w-4 h-4 text-clinical" />
+          <h3 className="font-display text-base font-semibold text-ink">AI receptionist</h3>
+        </div>
         {escalated && (
-          <span className="font-mono text-xs px-2 py-1 rounded-badge bg-signal-light text-signal border border-signal/30">
-            escalated to human
+          <span className="flex items-center gap-1 font-mono text-xs px-2 py-0.5 rounded-badge bg-signal-light text-signal border border-signal/30">
+            <AlertTriangle className="w-3 h-3" /> escalated
           </span>
         )}
       </div>
@@ -62,7 +66,7 @@ export function ReceptionistChat() {
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <p
-              className={`text-sm px-3 py-2 rounded-sm max-w-[80%] ${
+              className={`text-sm px-3 py-2 rounded-md max-w-[85%] ${
                 m.role === 'user' ? 'bg-clinical text-white' : 'bg-clinical-light text-ink'
               }`}
             >
@@ -70,6 +74,11 @@ export function ReceptionistChat() {
             </p>
           </div>
         ))}
+        {sending && (
+          <div className="flex justify-start">
+            <p className="text-sm px-3 py-2 rounded-md bg-clinical-light text-ink-muted italic">…</p>
+          </div>
+        )}
       </div>
 
       <form
@@ -81,14 +90,15 @@ export function ReceptionistChat() {
           onChange={(e) => setInput(e.target.value)}
           disabled={escalated}
           placeholder={escalated ? 'A staff member will follow up shortly' : 'Type a message…'}
-          className="flex-1 border border-hairline px-3 py-2 rounded-sm text-sm disabled:opacity-50"
+          className="flex-1 border border-hairline px-3 py-2 rounded-sm text-sm disabled:opacity-50 focus-visible:outline-clinical"
         />
         <button
           type="submit"
           disabled={sending || escalated}
-          className="bg-clinical hover:bg-clinical-dark text-white text-sm font-medium px-4 py-2 rounded-sm disabled:opacity-60"
+          className="bg-clinical hover:bg-clinical-dark text-white px-3 py-2 rounded-sm disabled:opacity-60"
+          aria-label="Send"
         >
-          Send
+          <Send className="w-4 h-4" />
         </button>
       </form>
     </div>

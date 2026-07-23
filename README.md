@@ -384,6 +384,32 @@ visible through the API rather than just sitting in the database unused.
   to human" badge the moment the backend's keyword check fires — the UI
   doesn't decide that, it just reflects what the backend already decided.
 
+## UI overhaul + installable PWA + a real bug fix
+
+- **Fixed a genuine infinite-redirect-loop bug** in `middleware.ts`: any
+  role other than admin/patient hitting a page it wasn't allowed on used
+  to get redirected to a hardcoded `/dashboard/patient` — which is itself
+  gated to admin/patient, so anyone else looped forever. Fixed by computing
+  the redirect target from the caller's actual role.
+- **Added a sign-out button** — there wasn't one anywhere before.
+- **Real component library** (`components/ui/`): `Card`, `Button`, `Badge`,
+  `Field`, `StatCard`, `EmptyState`, `Spinner` — every dashboard page now
+  shares the same building blocks instead of one-off inline markup.
+  `EmptyState` treats a blank list as "an invitation to act" rather than
+  just blank space — each one names what's missing and what to do about it.
+- **Icons throughout** (`lucide-react`) — sidebar nav, card headers, status
+  badges (AI-receptionist-booked flag, escalation indicator, etc.).
+- **Installable as a PWA**: `public/manifest.json` + a deliberately minimal
+  `public/sw.js` + an `InstallAppButton` that captures the browser's native
+  `beforeinstallprompt` for a real one-click install (except iOS Safari,
+  which never fires that event — there it's manual via the Share sheet).
+  The service worker **only** caches static shell assets (icons, manifest)
+  — it never touches API/data responses. Caching patient data on disk in a
+  service worker would outlive the session and could leak across users on
+  a shared device — that boundary is deliberate, not an oversight.
+- Same design identity as before (warm paper, muted clinical teal, amber
+  reserved strictly for urgency) — this was a depth pass, not a rebrand.
+
 ## Genuinely remaining next steps
 
 - Per-hospital procurement contact instead of the placeholder email in

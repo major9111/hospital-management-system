@@ -1,18 +1,24 @@
 'use client';
 
 import { useState } from 'react';
+import { PillBottle, ClipboardCheck } from 'lucide-react';
 import { authFetch } from '@/lib/api';
 import { StatusBanner } from '@/components/StatusBanner';
+import { Card, CardHeader } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
 
 type Status = { kind: 'success' | 'error'; message: string } | null;
 
 export function FulfillPrescriptionForm() {
   const [itemId, setItemId] = useState('');
   const [status, setStatus] = useState<Status>(null);
+  const [loading, setLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setStatus(null);
+    setLoading(true);
     try {
       const data = await authFetch(`/prescriptions/items/${itemId}/fulfill`, { method: 'POST' });
       setStatus({
@@ -25,19 +31,20 @@ export function FulfillPrescriptionForm() {
       });
     } catch (err: any) {
       setStatus({ kind: 'error', message: err.message });
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={submit} className="border border-hairline bg-white rounded-sm p-5 space-y-3">
-      <h3 className="font-display text-lg font-semibold text-ink">Fulfill prescription item</h3>
-      <StatusBanner status={status} />
-      <input placeholder="Prescription item ID" required value={itemId} onChange={(e) => setItemId(e.target.value)}
-        className="w-full border border-hairline px-3 py-2 rounded-sm text-sm" />
-      <button className="bg-clinical hover:bg-clinical-dark text-white text-sm font-medium px-4 py-2 rounded-sm">
-        Mark dispensed
-      </button>
-    </form>
+    <Card padded={false}>
+      <CardHeader title="Fulfill prescription item" icon={PillBottle} />
+      <form onSubmit={submit} className="p-5 space-y-3">
+        <StatusBanner status={status} />
+        <Field label="Prescription item ID" required value={itemId} onChange={(e) => setItemId(e.target.value)} />
+        <Button type="submit" disabled={loading}>{loading ? 'Dispensing…' : 'Mark dispensed'}</Button>
+      </form>
+    </Card>
   );
 }
 
@@ -46,10 +53,12 @@ export function ReportLabResultForm() {
   const [summary, setSummary] = useState('');
   const [isAbnormal, setIsAbnormal] = useState(false);
   const [status, setStatus] = useState<Status>(null);
+  const [loading, setLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setStatus(null);
+    setLoading(true);
     try {
       await authFetch(`/lab/orders/${orderId}/results`, {
         method: 'POST',
@@ -58,24 +67,30 @@ export function ReportLabResultForm() {
       setStatus({ kind: 'success', message: 'Result recorded — order marked completed.' });
     } catch (err: any) {
       setStatus({ kind: 'error', message: err.message });
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={submit} className="border border-hairline bg-white rounded-sm p-5 space-y-3">
-      <h3 className="font-display text-lg font-semibold text-ink">Report lab result</h3>
-      <StatusBanner status={status} />
-      <input placeholder="Lab order ID" required value={orderId} onChange={(e) => setOrderId(e.target.value)}
-        className="w-full border border-hairline px-3 py-2 rounded-sm text-sm" />
-      <textarea placeholder="Result summary" required value={summary} onChange={(e) => setSummary(e.target.value)}
-        rows={3} className="w-full border border-hairline px-3 py-2 rounded-sm text-sm" />
-      <label className="flex items-center gap-2 text-sm text-ink-muted">
-        <input type="checkbox" checked={isAbnormal} onChange={(e) => setIsAbnormal(e.target.checked)} />
-        Flag as abnormal
-      </label>
-      <button className="bg-clinical hover:bg-clinical-dark text-white text-sm font-medium px-4 py-2 rounded-sm">
-        Submit result
-      </button>
-    </form>
+    <Card padded={false}>
+      <CardHeader title="Report lab result" icon={ClipboardCheck} />
+      <form onSubmit={submit} className="p-5 space-y-3">
+        <StatusBanner status={status} />
+        <Field label="Lab order ID" required value={orderId} onChange={(e) => setOrderId(e.target.value)} />
+        <div>
+          <label className="block text-xs text-ink-muted mb-1">Result summary</label>
+          <textarea
+            required value={summary} onChange={(e) => setSummary(e.target.value)} rows={3}
+            className="w-full border border-hairline px-3 py-2 rounded-sm text-sm focus-visible:outline-clinical"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-ink-muted">
+          <input type="checkbox" checked={isAbnormal} onChange={(e) => setIsAbnormal(e.target.checked)} />
+          Flag as abnormal
+        </label>
+        <Button type="submit" disabled={loading}>{loading ? 'Submitting…' : 'Submit result'}</Button>
+      </form>
+    </Card>
   );
 }

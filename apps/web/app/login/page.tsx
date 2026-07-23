@@ -2,18 +2,22 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { HeartPulse } from 'lucide-react';
 import { decodeSession, primaryDashboardPath } from '@/lib/auth';
+import { Field } from '@/components/ui/Field';
+import { Button } from '@/components/ui/Button';
+import { StatusBanner } from '@/components/StatusBanner';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ kind: 'error'; message: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
+    setStatus(null);
     setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_GATEWAY_URL}/auth/login`, {
@@ -22,7 +26,7 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
       if (!res.ok) {
-        setError('Those credentials did not match — check them and try again.');
+        setStatus({ kind: 'error', message: 'Those credentials did not match — check them and try again.' });
         return;
       }
       const { accessToken } = await res.json();
@@ -37,54 +41,27 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
-        <div className="mb-10">
-          <p className="font-mono text-xs tracking-widest text-ink-muted uppercase mb-2">
-            Hospital Network Console
-          </p>
-          <h1 className="font-display text-3xl font-semibold text-ink">Sign in</h1>
+        <div className="flex items-center gap-2 mb-10">
+          <div className="w-8 h-8 rounded-sm bg-clinical flex items-center justify-center">
+            <HeartPulse className="w-4.5 h-4.5 text-white" />
+          </div>
+          <div>
+            <p className="font-mono text-[11px] tracking-widest text-ink-muted uppercase">
+              Hospital Network Console
+            </p>
+          </div>
         </div>
+        <h1 className="font-display text-3xl font-semibold text-ink mb-8">Sign in</h1>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label htmlFor="email" className="block text-sm text-ink-muted mb-1">
-              Work email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-hairline bg-white px-3 py-2 rounded-sm text-ink focus-visible:outline-clinical"
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm text-ink-muted mb-1">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-hairline bg-white px-3 py-2 rounded-sm text-ink focus-visible:outline-clinical"
-            />
-          </div>
+          <Field label="Work email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Field label="Password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
 
-          {error && (
-            <p className="text-sm text-signal bg-signal-light border border-signal/30 px-3 py-2 rounded-sm">
-              {error}
-            </p>
-          )}
+          <StatusBanner status={status} />
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-clinical hover:bg-clinical-dark text-white font-medium py-2.5 rounded-sm transition-colors disabled:opacity-60"
-          >
+          <Button type="submit" disabled={loading} className="w-full">
             {loading ? 'Signing in…' : 'Sign in'}
-          </button>
+          </Button>
         </form>
 
         <p className="text-sm text-ink-muted mt-6">

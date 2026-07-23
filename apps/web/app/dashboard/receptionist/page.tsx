@@ -1,4 +1,8 @@
 import { cookies } from 'next/headers';
+import { CalendarClock, Bot } from 'lucide-react';
+import { Card, CardHeader } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { BookAppointmentForm, PatientSearchForm, CreateInvoiceForm } from '@/components/ReceptionistForms';
 
 async function getAppointments() {
@@ -21,23 +25,23 @@ export default async function ReceptionistDashboard() {
       <h1 className="font-display text-2xl font-semibold text-ink mb-1">Front desk</h1>
       <p className="text-ink-muted text-sm mb-8">Book, search, and invoice.</p>
 
-      <div className="border border-hairline bg-white rounded-sm mb-6">
-        <h2 className="font-display text-lg font-semibold text-ink px-5 pt-4 pb-2">Today's schedule</h2>
-        {appointments.length ? (
+      <Card padded={false} className="mb-6">
+        <CardHeader title="Today's schedule" icon={CalendarClock} />
+        {appointments.length === 0 ? (
+          <EmptyState icon={CalendarClock} title="Nothing booked yet" description="Appointments booked by staff or the AI receptionist will appear here." />
+        ) : (
           <ul className="divide-y divide-hairline">
             {appointments.map((a: any) => (
               <li key={a.id} className="px-5 py-3 text-sm flex justify-between items-center">
                 <span>{a.patientName} — {a.department} — {a.scheduledAt}</span>
                 {a.bookedVia === 'ai_receptionist' && (
-                  <span className="font-mono text-xs text-ink-muted">via AI receptionist</span>
+                  <Badge tone="clinical"><Bot className="w-3 h-3" /> AI receptionist</Badge>
                 )}
               </li>
             ))}
           </ul>
-        ) : (
-          <p className="text-sm text-ink-muted px-5 pb-4">No appointments yet.</p>
         )}
-      </div>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <BookAppointmentForm />

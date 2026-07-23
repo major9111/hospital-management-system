@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { LayoutDashboard, Stethoscope, HeartPulse, ClipboardList, UserCircle } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { href: '/dashboard/admin', label: 'Admin', roles: ['admin'] },
-  { href: '/dashboard/doctor', label: 'Doctor', roles: ['admin', 'doctor'] },
-  { href: '/dashboard/nurse', label: 'Nurse', roles: ['admin', 'nurse'] },
-  { href: '/dashboard/receptionist', label: 'Front desk', roles: ['admin', 'receptionist'] },
-  { href: '/dashboard/patient', label: 'Patient', roles: ['admin', 'patient'] },
+  { href: '/dashboard/admin', label: 'Admin', roles: ['admin'], icon: LayoutDashboard },
+  { href: '/dashboard/doctor', label: 'Doctor', roles: ['admin', 'doctor'], icon: Stethoscope },
+  { href: '/dashboard/nurse', label: 'Nurse', roles: ['admin', 'nurse'], icon: HeartPulse },
+  { href: '/dashboard/receptionist', label: 'Front desk', roles: ['admin', 'receptionist'], icon: ClipboardList },
+  { href: '/dashboard/patient', label: 'Patient', roles: ['admin', 'patient'], icon: UserCircle },
 ];
 
 export function Sidebar({ roles }: { roles: string[] }) {
@@ -19,24 +20,34 @@ export function Sidebar({ roles }: { roles: string[] }) {
 
   return (
     <nav className="w-56 shrink-0 border-r border-hairline bg-white/60 min-h-screen px-4 py-8">
-      <p className="font-mono text-[11px] tracking-widest text-ink-muted uppercase mb-6 px-2">
-        Hospital Network
-      </p>
+      <div className="flex items-center gap-2 px-2 mb-8">
+        <div className="w-6 h-6 rounded-sm bg-clinical flex items-center justify-center">
+          <HeartPulse className="w-3.5 h-3.5 text-white" />
+        </div>
+        <p className="font-mono text-[11px] tracking-widest text-ink-muted uppercase">
+          Hospital Network
+        </p>
+      </div>
       <ul className="space-y-1">
-        {visibleItems.map((item) => (
-          <li key={item.href}>
-            <Link
-              href={item.href}
-              className={`block px-2 py-1.5 rounded-sm text-sm transition-colors ${
-                pathname === item.href
-                  ? 'bg-clinical-light text-clinical-dark font-medium'
-                  : 'text-ink-muted hover:text-ink'
-              }`}
-            >
-              {item.label}
-            </Link>
-          </li>
-        ))}
+        {visibleItems.map((item) => {
+          const Icon = item.icon;
+          const active = pathname === item.href;
+          return (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className={`flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm transition-colors ${
+                  active
+                    ? 'bg-clinical-light text-clinical-dark font-medium'
+                    : 'text-ink-muted hover:text-ink hover:bg-paper'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {item.label}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );

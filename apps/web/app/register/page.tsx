@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { HeartPulse } from 'lucide-react';
+import { Field } from '@/components/ui/Field';
+import { Button } from '@/components/ui/Button';
+import { StatusBanner } from '@/components/StatusBanner';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -37,37 +40,29 @@ export default function RegisterPage() {
   }
 
   const field = (key: keyof typeof form, label: string, type = 'text', required = true) => (
-    <div>
-      <label className="block text-sm text-ink-muted mb-1">{label}</label>
-      <input
-        type={type}
-        required={required}
-        value={form[key]}
-        onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-        className="w-full border border-hairline bg-white px-3 py-2 rounded-sm text-ink focus-visible:outline-clinical"
-      />
-    </div>
+    <Field
+      label={label}
+      type={type}
+      required={required}
+      value={form[key]}
+      onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+    />
   );
 
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
-        <p className="font-mono text-xs tracking-widest text-ink-muted uppercase mb-2">
-          Hospital Network Console
-        </p>
+        <div className="flex items-center gap-2 mb-8">
+          <div className="w-8 h-8 rounded-sm bg-clinical flex items-center justify-center">
+            <HeartPulse className="w-4.5 h-4.5 text-white" />
+          </div>
+          <p className="font-mono text-[11px] tracking-widest text-ink-muted uppercase">
+            Hospital Network Console
+          </p>
+        </div>
         <h1 className="font-display text-3xl font-semibold text-ink mb-8">Register as a patient</h1>
 
-        {status && (
-          <p
-            className={`text-sm px-3 py-2 rounded-sm border mb-4 ${
-              status.kind === 'error'
-                ? 'text-signal bg-signal-light border-signal/30'
-                : 'text-clinical-dark bg-clinical-light border-clinical/30'
-            }`}
-          >
-            {status.message}
-          </p>
-        )}
+        <StatusBanner status={status} />
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {field('fullName', 'Full name')}
@@ -78,18 +73,14 @@ export default function RegisterPage() {
           {field('insuranceProvider', 'Insurance provider', 'text', false)}
           {field('insurancePolicyNumber', 'Policy number', 'text', false)}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-clinical hover:bg-clinical-dark text-white font-medium py-2.5 rounded-sm transition-colors disabled:opacity-60"
-          >
+          <Button type="submit" disabled={loading} className="w-full">
             {loading ? 'Registering…' : 'Register'}
-          </button>
+          </Button>
         </form>
 
         <p className="text-sm text-ink-muted mt-6">
           Already have an account?{' '}
-          <Link href="/login" className="text-clinical-dark font-medium">Sign in</Link>
+          <a href="/login" className="text-clinical-dark font-medium">Sign in</a>
         </p>
       </div>
     </main>

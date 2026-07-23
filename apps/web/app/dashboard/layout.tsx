@@ -2,6 +2,8 @@ import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { Sidebar } from '@/components/Sidebar';
 import { RoleBadge } from '@/components/RoleBadge';
+import { LogoutButton } from '@/components/LogoutButton';
+import { InstallAppButton } from '@/components/InstallAppButton';
 
 async function getSession() {
   const token = cookies().get('access_token')?.value;
@@ -32,7 +34,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex-1">
         <header className="flex items-center justify-between border-b border-hairline px-8 py-4">
           <p className="font-mono text-xs text-ink-muted">{session?.email ?? 'Not signed in'}</p>
-          <RoleBadge role={roles[0]} />
+          <div className="flex items-center gap-4">
+            <InstallAppButton />
+            <RoleBadge role={roles[0]} />
+            <LogoutButton />
+          </div>
         </header>
         <main className="px-8 py-10">{children}</main>
       </div>
