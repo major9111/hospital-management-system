@@ -136,8 +136,18 @@ async def startup():
         DATABASE_URL, min_size=2, max_size=5,
         ssl="require" if "neon.tech" in DATABASE_URL else None,
     )
-    _es = AsyncElasticsearch(ELASTICSEARCH_URL)
-    await ensure_indices(_es)
+    try:
+        _es = AsyncElasticsearch(ELASTICSEARCH_URL)
+        await ensure_indices(_es)
+    except Exception as exc:
+        # This service's whole job is syncing to Elasticsearch, so a bad
+        # URL genuinely disables its function — but it should still stay
+        # up and answer /health rather than crash-loop on Render, since a
+        # crash-looping service is harder to diagnose than a healthy one
+        # that's visibly not doing its job (visible in these logs instead).
+        log.error("Elasticsearch unavailable at startup (%s) — sync disabled, /health still up", exc)
+        _es = None
+        return
     asyncio.create_task(full_reindex(_pool, _es))
     asyncio.create_task(listen_loop(_pool, _es))
 

@@ -8,32 +8,44 @@ from app.db import get_pool
 router = APIRouter()
 log = logging.getLogger("search")
 
-es = AsyncElasticsearch(os.environ.get("ELASTICSEARCH_URL", "http://localhost:9200"))
+# Built defensively: a missing or malformed ELASTICSEARCH_URL must never
+# crash the whole service on import — this is the primary search path, not
+# a required one, and the code already falls back to Postgres full-text
+# search when it's unreachable. A bad env var should degrade the same way
+# an unreachable one does, not take the entire service down.
+try:
+    es: AsyncElasticsearch | None = AsyncElasticsearch(
+        os.environ.get("ELASTICSEARCH_URL", "http://localhost:9200")
+    )
+except Exception as exc:
+    log.warning("Elasticsearch client could not be constructed (%s) — search will use Postgres only", exc)
+    es = None
 
 
 @router.get("/patients")
 async def search_patients(q: str, ctx: RequestContext = Depends(get_request_context)):
     # Elasticsearch is the primary path (typo-tolerant, scales better for
-    # large free-text queries). If it's unreachable, fall back to Postgres
-    # full-text search on `patients.search_vector` (see db/schema.sql) —
-    # slower and less forgiving of typos, but keeps search working without
-    # a second service having to stay up.
-    try:
-        result = await es.search(
-            index="patients",
-            query={
-                "bool": {
-                    "must": [{"match": {"full_name": q}}],
-                    "filter": [{"term": {"hospital_id": ctx.hospital_id}}],
-                }
-            },
-            size=20,
-        )
-        hits = [hit["_source"] | {"id": hit["_id"]} for hit in result["hits"]["hits"]]
-        return {"results": hits, "source": "elasticsearch"}
-    except ESConnectionError:
-        log.warning("Elasticsearch unreachable, falling back to Postgres full-text search")
-        return await _search_patients_postgres(q, ctx)
+    # large free-text queries). If it's unreachable — or was never
+    # configured at all — fall back to Postgres full-text search on
+    # `patients.search_vector` (see db/schema.sql).
+    if es is not None:
+        try:
+            result = await es.search(
+                index="patients",
+                query={
+                    "bool": {
+                        "must": [{"match": {"full_name": q}}],
+                        "filter": [{"term": {"hospital_id": ctx.hospital_id}}],
+                    }
+                },
+                size=20,
+            )
+            hits = [hit["_source"] | {"id": hit["_id"]} for hit in result["hits"]["hits"]]
+            return {"results": hits, "source": "elasticsearch"}
+        except ESConnectionError:
+            log.warning("Elasticsearch unreachable, falling back to Postgres full-text search")
+
+    return await _search_patients_postgres(q, ctx)
 
 
 async def _search_patients_postgres(q: str, ctx: RequestContext):
