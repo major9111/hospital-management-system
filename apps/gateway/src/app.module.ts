@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ProxyModule } from './proxy/proxy.module';
 import { AdminModule } from './admin/admin.module';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AdminModule } from './admin/admin.module';
     ProxyModule,
     AdminModule,
   ],
+  controllers: [HealthController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard }, // applies globally; per-route @Throttle overrides it
   ],
