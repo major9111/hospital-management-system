@@ -410,6 +410,42 @@ visible through the API rather than just sitting in the database unused.
 - Same design identity as before (warm paper, muted clinical teal, amber
   reserved strictly for urgency) — this was a depth pass, not a rebrand.
 
+## Design pivot — v2, moved away from the "clinical ledger" look
+
+The original identity (warm paper, serif headings, hairline borders) read
+as institutional/vintage rather than modern. Rebuilt the visual language:
+
+- **Type**: Space Grotesk (display, geometric/modern) + Inter (body) —
+  dropped the serif entirely. Plex Mono kept, but only for literal data
+  (IDs, timestamps), not decoration.
+- **Color**: cooler neutral canvas (`#F5F7FA`) instead of warm paper,
+  deeper more saturated teal (`#0F766E`), coral instead of amber for
+  urgent states.
+- **Elevation**: real shadows (`shadow-card`/`shadow-elevated` in
+  `tailwind.config.ts`) instead of relying on hairline borders alone —
+  cards actually lift off the page now.
+- **Shape**: rounded-xl/2xl throughout (was rounded-sm) — softer, more
+  contemporary.
+- **Signature moment**: the login screen is now a proper split-screen —
+  a gradient panel with an animated pulse-line SVG (`PulseLine.tsx`) on
+  one side, the form on the other — instead of a plain centered box.
+- Icon chips (tinted rounded squares) replace bare icons on stat cards and
+  card headers.
+
+## AI receptionist — now supports Groq, DeepSeek, and Gemini
+
+`claude_client.py` → `llm_client.py`: pluggable via one `LLM_PROVIDER` env
+var (`groq` | `deepseek` | `gemini` | `anthropic`), defaulting to Groq.
+Groq, DeepSeek, and Gemini all have meaningfully-sized free tiers, unlike
+Anthropic's pay-from-the-first-request API — that's why the default
+changed. The system prompt and the keyword-based urgent-escalation check
+are provider-agnostic and completely unchanged; only the model call itself
+is swapped. Also fixed a real bug in the process: the old client
+constructed its Anthropic client at module import time, so a missing
+`ANTHROPIC_API_KEY` crashed the whole service on startup regardless of
+which provider you actually wanted — each provider's client is now built
+lazily, only when that branch actually runs.
+
 ## Genuinely remaining next steps
 
 - Per-hospital procurement contact instead of the placeholder email in

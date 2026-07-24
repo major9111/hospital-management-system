@@ -7,6 +7,7 @@ import { decodeSession, primaryDashboardPath } from '@/lib/auth';
 import { Field } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { StatusBanner } from '@/components/StatusBanner';
+import { PulseLine } from '@/components/PulseLine';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,35 +40,61 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6">
-      <div className="w-full max-w-sm">
-        <div className="flex items-center gap-2 mb-10">
-          <div className="w-8 h-8 rounded-sm bg-clinical flex items-center justify-center">
-            <HeartPulse className="w-4.5 h-4.5 text-white" />
+    <main className="min-h-screen grid lg:grid-cols-2">
+      {/* Signature panel — gradient + animated pulse line, hidden on small screens */}
+      <div className="hidden lg:flex flex-col justify-between bg-clinical-gradient p-12 text-white relative overflow-hidden">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center">
+            <HeartPulse className="w-4.5 h-4.5" strokeWidth={2.5} />
           </div>
-          <div>
-            <p className="font-mono text-[11px] tracking-widest text-ink-muted uppercase">
-              Hospital Network Console
-            </p>
-          </div>
+          <p className="font-display text-lg font-semibold tracking-tight">Hospital Network</p>
         </div>
-        <h1 className="font-display text-3xl font-semibold text-ink mb-8">Sign in</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <Field label="Work email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-          <Field label="Password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        <div>
+          <div className="mb-8 opacity-90">
+            <PulseLine />
+          </div>
+          <h2 className="font-display text-3xl font-semibold tracking-tight leading-tight mb-3">
+            One console for every role in the network.
+          </h2>
+          <p className="text-white/80 text-sm max-w-sm">
+            Admin, clinical, front desk, and patient — the same real-time
+            record, scoped to what each person needs to see.
+          </p>
+        </div>
 
-          <StatusBanner status={status} />
+        <p className="text-xs text-white/50">Zamfara General Hospital — demo environment</p>
+      </div>
 
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Signing in…' : 'Sign in'}
-          </Button>
-        </form>
+      {/* Form panel */}
+      <div className="flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-sm">
+          <div className="lg:hidden flex items-center gap-2.5 mb-10">
+            <div className="w-8 h-8 rounded-xl bg-clinical-gradient flex items-center justify-center">
+              <HeartPulse className="w-4 h-4 text-white" strokeWidth={2.5} />
+            </div>
+            <p className="font-display text-sm font-semibold text-ink tracking-tight">Hospital Network</p>
+          </div>
 
-        <p className="text-sm text-ink-muted mt-6">
-          New patient?{' '}
-          <a href="/register" className="text-clinical-dark font-medium">Register here</a>
-        </p>
+          <h1 className="font-display text-2xl font-semibold text-ink tracking-tight mb-1">Welcome back</h1>
+          <p className="text-sm text-ink-muted mb-8">Sign in to your console.</p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Field label="Work email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Field label="Password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+
+            <StatusBanner status={status} />
+
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Signing in…' : 'Sign in'}
+            </Button>
+          </form>
+
+          <p className="text-sm text-ink-muted mt-6">
+            New patient?{' '}
+            <a href="/register" className="text-clinical-dark font-semibold">Register here</a>
+          </p>
+        </div>
       </div>
     </main>
   );

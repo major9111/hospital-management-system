@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from app.deps import get_request_context, RequestContext
-from app.claude_client import get_receptionist_reply
+from app.llm_client import get_receptionist_reply
 from app.internal_client import book_appointment_via_ehr, notify_escalation
 
 router = APIRouter()

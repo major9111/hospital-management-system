@@ -10,7 +10,7 @@ export function Card({
   padded?: boolean;
 }) {
   return (
-    <div className={`border border-hairline bg-white rounded-md ${padded ? 'p-5' : ''} ${className}`}>
+    <div className={`bg-surface rounded-2xl shadow-card border border-hairline/60 ${padded ? 'p-5' : ''} ${className}`}>
       {children}
     </div>
   );
@@ -26,10 +26,14 @@ export function CardHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-hairline">
-      <div className="flex items-center gap-2">
-        {Icon && <Icon className="w-4 h-4 text-clinical" />}
-        <h3 className="font-display text-base font-semibold text-ink">{title}</h3>
+    <div className="flex items-center justify-between px-5 pt-5 pb-4">
+      <div className="flex items-center gap-2.5">
+        {Icon && (
+          <div className="w-7 h-7 rounded-lg bg-clinical-light flex items-center justify-center">
+            <Icon className="w-3.5 h-3.5 text-clinical-dark" />
+          </div>
+        )}
+        <h3 className="font-display text-[15px] font-semibold text-ink tracking-tight">{title}</h3>
       </div>
       {action}
     </div>

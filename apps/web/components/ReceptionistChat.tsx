@@ -49,7 +49,7 @@ export function ReceptionistChat() {
   }
 
   return (
-    <div className="border border-hairline bg-white rounded-md flex flex-col h-[560px] sticky top-8">
+    <div className="border border-hairline/60 bg-surface rounded-2xl shadow-card flex flex-col h-[560px] sticky top-8">
       <div className="px-5 py-3 border-b border-hairline flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bot className="w-4 h-4 text-clinical" />
@@ -66,7 +66,7 @@ export function ReceptionistChat() {
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <p
-              className={`text-sm px-3 py-2 rounded-md max-w-[85%] ${
+              className={`text-sm px-3 py-2 rounded-2xl max-w-[85%] ${
                 m.role === 'user' ? 'bg-clinical text-white' : 'bg-clinical-light text-ink'
               }`}
             >
@@ -76,7 +76,7 @@ export function ReceptionistChat() {
         ))}
         {sending && (
           <div className="flex justify-start">
-            <p className="text-sm px-3 py-2 rounded-md bg-clinical-light text-ink-muted italic">…</p>
+            <p className="text-sm px-3 py-2 rounded-2xl bg-clinical-light text-ink-muted italic">…</p>
           </div>
         )}
       </div>
@@ -90,12 +90,12 @@ export function ReceptionistChat() {
           onChange={(e) => setInput(e.target.value)}
           disabled={escalated}
           placeholder={escalated ? 'A staff member will follow up shortly' : 'Type a message…'}
-          className="flex-1 border border-hairline px-3 py-2 rounded-sm text-sm disabled:opacity-50 focus-visible:outline-clinical"
+          className="flex-1 border border-hairline px-3 py-2 rounded-xl text-sm disabled:opacity-50 focus-visible:outline-clinical"
         />
         <button
           type="submit"
           disabled={sending || escalated}
-          className="bg-clinical hover:bg-clinical-dark text-white px-3 py-2 rounded-sm disabled:opacity-60"
+          className="bg-clinical hover:bg-clinical-dark text-white px-3 py-2 rounded-xl disabled:opacity-60"
           aria-label="Send"
         >
           <Send className="w-4 h-4" />

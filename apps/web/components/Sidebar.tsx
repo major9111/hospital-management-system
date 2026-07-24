@@ -19,12 +19,12 @@ export function Sidebar({ roles }: { roles: string[] }) {
   );
 
   return (
-    <nav className="w-56 shrink-0 border-r border-hairline bg-white/60 min-h-screen px-4 py-8">
-      <div className="flex items-center gap-2 px-2 mb-8">
-        <div className="w-6 h-6 rounded-sm bg-clinical flex items-center justify-center">
-          <HeartPulse className="w-3.5 h-3.5 text-white" />
+    <nav className="w-64 shrink-0 bg-surface min-h-screen px-4 py-6 border-r border-hairline/60">
+      <div className="flex items-center gap-2.5 px-2 mb-8">
+        <div className="w-8 h-8 rounded-xl bg-clinical-gradient flex items-center justify-center shadow-card">
+          <HeartPulse className="w-4 h-4 text-white" strokeWidth={2.5} />
         </div>
-        <p className="font-mono text-[11px] tracking-widest text-ink-muted uppercase">
+        <p className="font-display text-sm font-semibold text-ink tracking-tight">
           Hospital Network
         </p>
       </div>
@@ -36,10 +36,10 @@ export function Sidebar({ roles }: { roles: string[] }) {
             <li key={item.href}>
               <Link
                 href={item.href}
-                className={`flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm transition-colors ${
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   active
-                    ? 'bg-clinical-light text-clinical-dark font-medium'
-                    : 'text-ink-muted hover:text-ink hover:bg-paper'
+                    ? 'bg-clinical text-white shadow-card'
+                    : 'text-ink-muted hover:text-ink hover:bg-canvas'
                 }`}
               >
                 <Icon className="w-4 h-4" />

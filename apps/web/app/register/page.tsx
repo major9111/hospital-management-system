@@ -50,37 +50,41 @@ export default function RegisterPage() {
   );
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-sm">
-        <div className="flex items-center gap-2 mb-8">
-          <div className="w-8 h-8 rounded-sm bg-clinical flex items-center justify-center">
-            <HeartPulse className="w-4.5 h-4.5 text-white" />
+    <main className="min-h-screen flex items-center justify-center px-6 py-12 bg-canvas">
+      <div className="w-full max-w-md">
+        <div className="bg-surface rounded-2xl shadow-elevated border border-hairline/60 p-8">
+          <div className="flex items-center gap-2.5 mb-8">
+            <div className="w-8 h-8 rounded-xl bg-clinical-gradient flex items-center justify-center">
+              <HeartPulse className="w-4 h-4 text-white" strokeWidth={2.5} />
+            </div>
+            <p className="font-display text-sm font-semibold text-ink tracking-tight">Hospital Network</p>
           </div>
-          <p className="font-mono text-[11px] tracking-widest text-ink-muted uppercase">
-            Hospital Network Console
-          </p>
+
+          <h1 className="font-display text-2xl font-semibold text-ink tracking-tight mb-1">Register as a patient</h1>
+          <p className="text-sm text-ink-muted mb-6">Takes about a minute.</p>
+
+          <StatusBanner status={status} />
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {field('fullName', 'Full name')}
+            {field('email', 'Email', 'email')}
+            {field('password', 'Password', 'password')}
+            {field('phone', 'Phone', 'tel', false)}
+            <div className="pt-2 pb-1">
+              <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide">Insurance (optional)</p>
+            </div>
+            {field('insuranceProvider', 'Insurance provider', 'text', false)}
+            {field('insurancePolicyNumber', 'Policy number', 'text', false)}
+
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Registering…' : 'Register'}
+            </Button>
+          </form>
         </div>
-        <h1 className="font-display text-3xl font-semibold text-ink mb-8">Register as a patient</h1>
 
-        <StatusBanner status={status} />
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {field('fullName', 'Full name')}
-          {field('email', 'Email', 'email')}
-          {field('password', 'Password', 'password')}
-          {field('phone', 'Phone', 'tel', false)}
-          <p className="text-xs text-ink-muted pt-2">Insurance (optional)</p>
-          {field('insuranceProvider', 'Insurance provider', 'text', false)}
-          {field('insurancePolicyNumber', 'Policy number', 'text', false)}
-
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Registering…' : 'Register'}
-          </Button>
-        </form>
-
-        <p className="text-sm text-ink-muted mt-6">
+        <p className="text-sm text-ink-muted mt-6 text-center">
           Already have an account?{' '}
-          <a href="/login" className="text-clinical-dark font-medium">Sign in</a>
+          <a href="/login" className="text-clinical-dark font-semibold">Sign in</a>
         </p>
       </div>
     </main>

@@ -82,7 +82,7 @@ export function ReportLabResultForm() {
           <label className="block text-xs text-ink-muted mb-1">Result summary</label>
           <textarea
             required value={summary} onChange={(e) => setSummary(e.target.value)} rows={3}
-            className="w-full border border-hairline px-3 py-2 rounded-sm text-sm focus-visible:outline-clinical"
+            className="w-full border border-hairline px-3 py-2 rounded-xl text-sm focus-visible:outline-clinical"
           />
         </div>
         <label className="flex items-center gap-2 text-sm text-ink-muted">

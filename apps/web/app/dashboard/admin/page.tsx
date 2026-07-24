@@ -31,7 +31,7 @@ export default async function AdminDashboard() {
           <StatCard icon={PackageX} label="Low-stock items" value={metrics.lowStockItems} />
         </div>
       ) : (
-        <div className="border border-hairline bg-white rounded-md">
+        <div className="border border-hairline bg-white rounded-2xl">
           <EmptyState
             icon={PackageX}
             title="Metrics unavailable right now"

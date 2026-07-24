@@ -1,14 +1,14 @@
 import type { Metadata, Viewport } from 'next';
-import { Source_Serif_4, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+import { Space_Grotesk, Inter, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 
-const display = Source_Serif_4({
+const display = Space_Grotesk({
   subsets: ['latin'],
-  weight: ['600', '700'],
+  weight: ['500', '600', '700'],
   variable: '--font-display',
 });
-const body = IBM_Plex_Sans({
+const body = Inter({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
   variable: '--font-body',
@@ -30,13 +30,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#2F6F62',
+  themeColor: '#0F766E',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
-      <body className="font-body">
+      <body className="font-body bg-canvas">
         {children}
         <ServiceWorkerRegistration />
       </body>

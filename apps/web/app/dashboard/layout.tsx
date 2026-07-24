@@ -25,22 +25,20 @@ async function getSession() {
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
   const roles = session?.roles ?? ['patient'];
-  // middleware.ts already redirects unauthenticated/unauthorized visitors —
-  // this fallback just keeps the shell from crashing if it somehow renders first.
 
   return (
     <div className="flex">
       <Sidebar roles={roles} />
       <div className="flex-1">
-        <header className="flex items-center justify-between border-b border-hairline px-8 py-4">
-          <p className="font-mono text-xs text-ink-muted">{session?.email ?? 'Not signed in'}</p>
-          <div className="flex items-center gap-4">
+        <header className="flex items-center justify-between px-8 py-5">
+          <p className="text-sm text-ink-muted">{session?.email ?? 'Not signed in'}</p>
+          <div className="flex items-center gap-5">
             <InstallAppButton />
             <RoleBadge role={roles[0]} />
             <LogoutButton />
           </div>
         </header>
-        <main className="px-8 py-10">{children}</main>
+        <main className="px-8 pb-10">{children}</main>
       </div>
     </div>
   );

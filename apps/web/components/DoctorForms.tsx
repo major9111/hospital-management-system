@@ -91,7 +91,7 @@ export function LabOrderForm() {
         <div>
           <label className="block text-xs text-ink-muted mb-1">Priority</label>
           <select value={priority} onChange={(e) => setPriority(e.target.value)}
-            className="w-full border border-hairline px-3 py-2 rounded-sm text-sm bg-white">
+            className="w-full border border-hairline px-3 py-2 rounded-xl text-sm bg-white">
             <option value="routine">Routine</option>
             <option value="urgent">Urgent</option>
             <option value="stat">Stat</option>

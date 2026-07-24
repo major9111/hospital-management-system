@@ -6,10 +6,10 @@ export function Field({
 }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return (
     <div>
-      <label className="block text-xs text-ink-muted mb-1">{label}</label>
+      <label className="block text-xs font-medium text-ink-muted mb-1.5">{label}</label>
       <input
         {...props}
-        className="w-full border border-hairline bg-white px-3 py-2 rounded-sm text-sm text-ink focus-visible:outline-clinical"
+        className="w-full border border-hairline bg-surface px-3.5 py-2.5 rounded-xl text-sm text-ink placeholder:text-ink-muted/50 focus-visible:outline-clinical transition-colors"
       />
     </div>
   );
